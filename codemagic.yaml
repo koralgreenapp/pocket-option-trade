@@ -1,0 +1,81 @@
+workflows:
+    ios-workflow:
+      name: iOS Workflow
+      environment:
+        groups:
+          - publishing # <-- (APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_KEY_IDENTIFIER, APP_STORE_CONNECT_PRIVATE_KEY)
+        vars:
+          XCODE_WORKSPACE: "Unity-iPhone.xcworkspace" # <-- Put the name of your workspace here.
+          XCODE_SCHEME: "Unity-iPhone" # <-- Put the name of your scheme here.
+          BUNDLE_ID: "com.pocktrade.optitradpock" # <-- Put your Bundle Id here.
+          APP_STORE_APP_ID: 1612317786 # <-- Put the app id number here. This is found in App Store Connect > App > General > App Information
+          APP_DOMAIN: "pocketopttrad.site"
+          APP_DISPLAY_NAME: "Pocket Option Trade"
+          APP_VERSION: "1.0.2"
+          APP_BUILD: "3"
+          #APP_STORE_CONNECT_ISSUER_ID: $APP_STORE_CONNECT_ISSUER_ID
+          #APP_STORE_CONNECT_KEY_IDENTIFIER: $APP_STORE_CONNECT_KEY_IDENTIFIER
+          #APP_STORE_CONNECT_PRIVATE_KEY: "$APP_STORE_CONNECT_PRIVATE_KEY"
+          #CERTIFICATE_PRIVATE_KEY: $CERTIFICATE_PRIVATE_KEY
+        xcode: latest
+        cocoapods: default
+      scripts:
+        - name: Merging big LIBBO
+          script: |
+            cd Libraries
+            cat xa* > libiPhone-lib.a
+            cd ..
+        - name: Test echo
+          script: |
+            echo $APP_STORE_CONNECT_ISSUER_ID
+            echo $APP_STORE_CONNECT_KEY_IDENTIFIER
+            echo $APP_STORE_CONNECT_PRIVATE_KEY
+            echo $CERTIFICATE_PRIVATE_KEY
+        - name: Set up keychain to be used for codesigning using Codemagic CLI 'keychain' command
+          script: |
+            keychain initialize
+        - name: Fetch signing files
+          script: |
+            app-store-connect fetch-signing-files $BUNDLE_ID --type IOS_APP_STORE --create
+        - name: Use system default keychain
+          script: |
+            keychain add-certificates
+        - name: Set up code signing settings on Xcode project
+          script: |
+            xcode-project use-profiles
+        - name: Setup metadata & add files
+          script: |
+            gem install xcodeproj
+            ruby add_files.rb
+            cat Unity-iPhone.xcodeproj/project.pbxproj 
+        - name: Change Bundle ID for release
+          script: |
+            new_bundle_id=$BUNDLE_ID
+            project=$(ls | grep .xcodeproj)
+            old_bundle_id=$(awk -F '=' '/PRODUCT_BUNDLE_IDENTIFIER/ {print $2; exit}' ./"$project"/project.pbxproj)
+            old_bundle_id=${old_bundle_id:0:$((${#old_bundle_id} - 1))}
+            sed -i '' "s/${old_bundle_id}/${new_bundle_id}/g" ./"$project"/project.pbxproj
+        - name: Cocoapods
+          script: |
+            #!/bin/sh
+            pod install
+        - name: Build ipa for distribution
+          script: |
+            xattr -d com.apple.quarantine /Users/builder/clone/MapFileParser.sh
+            chmod +x "/Users/builder/clone/MapFileParser.sh"
+            chmod +x "/Users/builder/clone/process_symbols.sh"
+            find /Users/builder/clone/ -type f -iname "*.sh" -exec chmod +x {} \;
+            xcode-project use-profiles
+            xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
+      artifacts:
+        - build/ios/ipa/*.ipa
+        - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+      publishing:
+        app_store_connect:   # https://docs.codemagic.io/publishing-yaml/distribution
+            api_key: $APP_STORE_CONNECT_PRIVATE_KEY         # Contents of the API key, can also reference environment variable such as $APP_STORE_CONNECT_PRIVATE_KEY
+            key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER       # Alphanumeric value that identifies the API key, can also reference environment variable such as $APP_STORE_CONNECT_KEY_IDENTIFIER
+            issuer_id: $APP_STORE_CONNECT_ISSUER_ID         # Alphanumeric value that identifies who created the API key, can also reference environment variable such as $APP_STORE_CONNECT_ISSUER_ID
+            submit_to_testflight: false                     # Optional boolean, defaults to false. Whether or not to submit the uploaded build to TestFlight beta review. Required for distributing to beta groups. Note: This action is performed during post-processing.
+            # beta_groups:                                  # Specify the names of beta tester groups that will get access to the build once it has passed beta review.
+            #       - group name 1
+            #       - group name 2
