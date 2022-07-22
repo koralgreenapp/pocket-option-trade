@@ -54,7 +54,7 @@ ios_support_frameworks_path = sdk_path + '/System/iOSSupport/System/Library/Fram
 frameworks_path = sdk_path + '/System/Library/Frameworks/'
 puts ios_support_frameworks_path
 
-project.files().select {|file| file.name.eql?("libAppsFlyerLib.a")}.each {|file_ref| file_ref.remove_from_project()}
+# project.files().select {|file| file.name.eql?("libAppsFlyerLib.a")}.each {|file_ref| file_ref.remove_from_project()}
 
 safari_services_framework_name = "SafariServices.framework"
 safari_services_framework_path = ios_support_frameworks_path + safari_services_framework_name
