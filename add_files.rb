@@ -11,37 +11,37 @@ project = Xcodeproj::Project.open(project_file)
 # end
 
 # Add a file to the project in the main group
-file_name = 'GoogleService-Info.plist'
-group_name = product_name
-file = project.new_file(file_name)
-project.native_targets.first.add_resources([file])
+# file_name = 'GoogleService-Info.plist'
+# group_name = product_name
+# file = project.new_file(file_name)
+# project.native_targets.first.add_resources([file])
 
 product_name = project.root_object.build_configuration_list.build_configurations.first.build_settings['PRODUCT_NAME_APP']
 
-capa_file = 'Unity-iPhone/' + product_name + '.entitlements'
-project.root_object.build_configuration_list.build_configurations.each do |target|
-    target.build_settings['CODE_SIGN_ENTITLEMENTS'] = capa_file
-    # target.build_settings['ARCHS'] = "$(ARCHS_STANDARD)"
-end
+# capa_file = 'Unity-iPhone/' + product_name + '.entitlements'
+# project.root_object.build_configuration_list.build_configurations.each do |target|
+#     target.build_settings['CODE_SIGN_ENTITLEMENTS'] = capa_file
+#     # target.build_settings['ARCHS'] = "$(ARCHS_STANDARD)"
+# end
 
-open(capa_file, 'w') { |f|
-f << '<?xml version="1.0" encoding="UTF-8"?>'
-f << "\n"
-f <<'<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">'
-f << "\n"
-f << '<plist version="1.0">'
-f << "\n"
-f << '<dict>'
-f << "\n"
-f << '      <key>aps-environment</key>'
-f << "\n"
-f << '     <string>production</string>'
-f << "\n"
-f << '</dict>'
-f << "\n"
-f << '</plist>'
-}
-capa = project.new_file(capa_file)
+# open(capa_file, 'w') { |f|
+# f << '<?xml version="1.0" encoding="UTF-8"?>'
+# f << "\n"
+# f <<'<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">'
+# f << "\n"
+# f << '<plist version="1.0">'
+# f << "\n"
+# f << '<dict>'
+# f << "\n"
+# f << '      <key>aps-environment</key>'
+# f << "\n"
+# f << '     <string>production</string>'
+# f << "\n"
+# f << '</dict>'
+# f << "\n"
+# f << '</plist>'
+# }
+# capa = project.new_file(capa_file)
 
 # Adding Frameworks
 unity_framework_target = project.native_targets.select {|target| target.name.eql?("UnityFramework")}.first
